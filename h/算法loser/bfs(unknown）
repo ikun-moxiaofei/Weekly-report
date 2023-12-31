@@ -1,0 +1,101 @@
+#include<iostream>
+#include<algorithm>
+#include<vector>
+using namespace std;
+
+const int rule[10][10]={
+    {0, 0,0,0, 0,0,0, 0,0,0},
+
+    {0, 0,1,1, 0,1,1, 1,1,1},
+    {0, 1,1,0, 0,1,1, 0,1,0},
+    {0, 0,1,0, 0,1,0, 0,1,0},
+
+    {0, 0,0,0, 0,0,0, 0,0,1},
+    {0, 1,0,1, 0,0,0, 0,0,1},
+    {0, 1,1,1, 0,0,0, 1,1,1},
+
+    {0, 0,0,1, 0,1,0, 1,1,0},
+    {0, 0,1,1, 1,1,1, 0,1,0},
+    {0, 1,1,0, 0,1,0, 0,1,1}
+};
+int mp[10][10]={
+    {0, 0,0,0, 0,0,0, 0,0,0},
+
+    {0, 0,0,0, 0,0,0, 0,0,0},
+    {0, 0,0,0, 0,0,0, 0,0,0},
+    {0, 0,0,0, 0,0,0, 0,0,0},
+
+    {0, 0,0,0, 0,0,0, 0,0,0},
+    {0, 0,0,0, 0,0,0, 0,4,0},
+    {0, 0,0,0, 0,0,0, 0,0,0},
+
+    {0, 0,0,0, 0,0,0, 0,0,0},
+    {0, 0,0,0, 0,0,0, 0,0,0},
+    {0, 0,0,0, 0,0,0, 0,0,0},
+};
+const int edge[10][4]={ 
+    {0,0,0,0},
+    {1,3,1,3}, {1,3,4,6}, {1,3,7,9},
+    {4,6,1,3}, {4,6,4,6}, {4,6,7,9},
+    {7,9,1,3}, {7,9,4,6}, {7,9,7,9},
+};
+const int dir[4][2]={ {1,0},{0,1},{-1,0},{0,-1} };
+
+int row[10][10],col[10][10],cell[10][10],pos[100][3],ans;
+vector<int> order;
+
+bool check(int x, int y, int c, int val){
+    if (!rule[x][y]) return false;
+    for (int i = 0; i < 4; i++){
+        int xx = x + dir[i][0];
+        int yy = y + dir[i][1];
+        if (xx < edge[c][0] || xx > edge[c][1] || yy < edge[c][2] || yy > edge[c][3] || mp[xx][yy] == 0) continue;
+        if (rule[xx][yy] && abs(mp[xx][yy] - val) < 5) return true;
+    }
+    return false;
+}
+
+void pt(){
+    for (int i = 1; i < 10; i++){
+        for (int j = 1; j < 10; j++){
+            if (j % 3 == 1) printf(" ");
+            printf("%d%c", mp[i][j], " \n"[j == 9]);
+            if (i % 3 == 0 && j == 9) printf("\n");
+        }
+    }
+    printf("\n");
+}
+
+void dfs(int n){
+    //if (ans) return; // need only one answer?
+    if (n >= order.size()){ pt(); ans++; return; }
+    int x = pos[order[n]][0], y = pos[order[n]][1], c = pos[order[n]][2];
+    for (int v = 1; v < 10; v++){
+        if (row[x][v] || col[y][v] || cell[c][v] || check(x, y, c, v)) continue;
+        mp[x][y] = v; row[x][v] = 1; col[y][v] = 1; cell[c][v] = 1;
+        dfs(n + 1);
+        mp[x][y] = 0; row[x][v] = 0; col[y][v] = 0; cell[c][v] = 0;
+    }
+}
+
+int main(){
+    for (int i = 1; i <= 81; i++){
+        int c = (i - 1) / 9 + 1;
+        int x = (i - 1) % 9 / 3 + edge[c][0];
+        int y = (i - 1) % 3 + edge[c][2];
+        pos[i][0] = x, pos[i][1] = y, pos[i][2] = c;
+        if (!mp[x][y]) order.push_back(i);
+        else{
+            row[x][mp[x][y]]=1;
+            col[y][mp[x][y]]=1;
+            cell[c][mp[x][y]]=1;
+        }
+    }
+    sort(order.begin(), order.end(), [](int a, int b){
+        int ax = pos[a][0], ay = pos[a][1], ac = pos[a][2];
+        int bx = pos[b][0], by = pos[b][1], bc = pos[b][2];
+        return (rule[ax][ay] << 5) + ac > (rule[bx][by] << 5) + bc;
+    });
+    dfs(0);
+    printf("ans = %d\n", ans);
+}
